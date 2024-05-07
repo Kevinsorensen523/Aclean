@@ -10,11 +10,10 @@ contract ServiceManager {
     mapping(address => address[]) private clientAgreements;
     mapping(address => address[]) private providerAgreements;
     enum ServiceCategory {
-        DogWalking,
-        Painting,
-        Plumbing,
-        Electrical,
-        GeneralContractor
+        CuciAC,
+        TambahFreon,
+        ServiceAC,
+        PasangAC
     }
 
     modifier validProvidersOnly(address _provider) {

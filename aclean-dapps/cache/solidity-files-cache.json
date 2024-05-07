@@ -72,6 +72,78 @@
       "artifacts": [
         "ServiceManager"
       ]
+    },
+    "C:\\Users\\Kevin Sorensen\\GitHub\\Aclean\\aclean-dapps\\contracts\\ServiceAgreement.sol": {
+      "lastModificationDate": 1714446688856,
+      "contentHash": "2824f0455deae09040ad61cc62642ca7",
+      "sourceName": "contracts/ServiceAgreement.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.8.1"
+      ],
+      "artifacts": [
+        "ServiceAgreement"
+      ]
+    },
+    "C:\\Users\\Kevin Sorensen\\GitHub\\Aclean\\aclean-dapps\\contracts\\ServiceManager.sol": {
+      "lastModificationDate": 1715052565745,
+      "contentHash": "96e42e2ed933f5eafd5b2f7297e2a7f8",
+      "sourceName": "contracts/ServiceManager.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ServiceAgreement.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "ServiceManager"
+      ]
     }
   }
 }
