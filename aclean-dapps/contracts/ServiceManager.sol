@@ -13,7 +13,8 @@ contract ServiceManager {
         CuciAC,
         TambahFreon,
         ServiceAC,
-        PasangAC
+        PasangAC,
+        Tidur
     }
 
     modifier validProvidersOnly(address _provider) {

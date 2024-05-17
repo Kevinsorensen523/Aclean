@@ -51,16 +51,23 @@ contract ServiceAgreement {
         FiveStar
     }
     modifier providerOnly() {
-        require(msg.sender == provider, "Only the service Provider can call this.");
+        require(msg.sender == provider, "Only the service Provider can call this");
         _;
     }
 
     modifier clientOnly() {
-        require(msg.sender == client, "Only the client can call this.");
+        require(msg.sender == client, "Only the client can call this");
         _;
     }
     event ServiceStatusUpdate(
         address indexed agreementAddress,
+        WorkStatus agreementStatus
+    );
+
+    event AgreementFulfilled(
+        address indexed agreementAddress,
+        Rating clientRating,
+        ClientApprovalStatus clientApprovalStatus,
         WorkStatus agreementStatus
     );
 
@@ -83,7 +90,35 @@ contract ServiceAgreement {
         require(!agreementFulfilledOrNullified, "Agreement has already been fulfilled");
     }
 
-    // function getAgreementDetails() external view returns() {
-    //     return (client, provider, address(this).balance, agreementStatus, clientApprovalStatus, clientRating, agreementFulfilledOrNullified, termsAmount);
-    // }
+    function getAgreementDetails() external view returns(address, address, uint256, WorkStatus, ClientApprovalStatus, Rating,
+    bool, uint256) {
+        return (client, provider, address(this).balance, agreementStatus, clientApprovalStatus, clientRating,
+        agreementFulfilledOrNullified, termsAmount);
+    }
+
+    function transferFundsToProvider() external providerOnly {
+        require(!agreementFulfilledOrNullified, "this agreement has already been fulfilled or nullified");
+        require(address(this).balance >= termsAmount, "Contract balance requirement has not been met");
+        require(agreementStatus == WorkStatus.Completed && clientApprovalStatus == ClientApprovalStatus.Approved, 
+        "Service was not complete or approved");
+
+        closedOutBalance(provider, address(this).balance);
+    }
+
+    function refund() external clientOnly {
+        require(!agreementFulfilledOrNullified, "this agreement has already been fulfilled or nullified");
+        require(agreementStatus == WorkStatus.WillNotComplete, "The agreement has not been marked as Will Not Complete");
+        require(address(this).balance >= 0, "There is no funds to refund");
+
+        closedOutBalance(client, address(this).balance);
+    }
+
+    function closedOutBalance(address _address, uint256 _amount) private {
+        agreementFulfilledOrNullified = true;
+
+        emit AgreementFulfilled(address(this), clientRating, clientApprovalStatus, agreementStatus);
+
+        (bool success,) = payable(_address).call{value: _amount}("");
+        require(success, "Transfer unsuccessful");   
+    }
 }
