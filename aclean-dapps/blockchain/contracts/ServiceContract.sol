@@ -73,12 +73,14 @@ contract ServiceContract {
         require(index < services[msg.sender].length, "Service index out of bounds");
         Service[] storage userServices = services[msg.sender];
 
+        string memory serviceName = userServices[index].name;
+
         for (uint256 i = index; i < userServices.length - 1; i++) {
             userServices[i] = userServices[i + 1];
         }
 
         userServices.pop();
-        emit ServiceDeleted(msg.sender, userServices[index].name);
+        emit ServiceDeleted(msg.sender, serviceName);
     }
 
     function getAllServices() public view returns (Service[] memory) {
