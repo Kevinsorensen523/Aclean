@@ -8,7 +8,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "^0.8.0", // Ensure compatibility with your contract's pragma
+      version: "0.8.19", // Ensure compatibility with your contract's pragma
     },
   },
 };

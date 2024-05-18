@@ -1,5 +1,5 @@
-const PaymentContract = artifacts.require("PaymentContract");
+const ServiceContract = artifacts.require("ServiceContract");
 
 module.exports = function (deployer) {
-  deployer.deploy(PaymentContract);
+  deployer.deploy(ServiceContract);
 };
