@@ -16,6 +16,7 @@ import {
   Text,
   Link as ChakraLink,
   Image,
+  useToast,
 } from "@chakra-ui/react";
 import { NavigationBar } from "../components/NavigationBar";
 import { FooterBar } from "../components/FooterBar";
@@ -24,6 +25,7 @@ import {
   ArrowBackIcon,
   ArrowForwardIcon,
   SearchIcon,
+  DeleteIcon,
 } from "@chakra-ui/icons";
 import { Link as ReactRouterLink } from "react-router-dom";
 import Web3 from "web3";
@@ -32,6 +34,8 @@ import ServiceContract from "./../contracts/ServiceContract.json";
 export const MyService = () => {
   const [account, setAccount] = useState(null);
   const [services, setServices] = useState([]);
+  const [contract, setContract] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     loadWeb3();
@@ -61,30 +65,40 @@ export const MyService = () => {
         ServiceContract.abi,
         deployedNetwork.address
       );
-      const serviceList = await contractInstance.methods
+      setContract(contractInstance);
+
+      const services = await contractInstance.methods
         .getServices(accounts[0])
         .call();
-      setServices(serviceList);
+      setServices(services);
     } else {
       window.alert("Smart contract not deployed to detected network.");
     }
   };
 
   const deleteService = async (index) => {
-    const web3 = window.web3;
-    const networkId = await web3.eth.net.getId();
-    const deployedNetwork = ServiceContract.networks[networkId];
-    if (deployedNetwork) {
-      const contractInstance = new web3.eth.Contract(
-        ServiceContract.abi,
-        deployedNetwork.address
-      );
-      await contractInstance.methods
-        .deleteService(index)
-        .send({ from: account });
-      loadBlockchainData(); // Reload services after deletion
-    } else {
-      window.alert("Smart contract not deployed to detected network.");
+    try {
+      await contract.methods.deleteService(index).send({ from: account });
+      const updatedServices = await contract.methods
+        .getServices(account)
+        .call();
+      setServices(updatedServices);
+      toast({
+        title: "Service deleted.",
+        description: "Service has been deleted successfully.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error deleting service.",
+        description:
+          "There was an error deleting the service. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -182,31 +196,30 @@ export const MyService = () => {
                     </Box>
                   </Stack>
 
-                  <ChakraLink
-                    as={ReactRouterLink}
-                    to={`/detail-my-service/${index + 1}`}
-                  >
-                    <Button
-                      rightIcon={<ArrowForwardIcon />}
-                      size={"sm"}
-                      textColor={"aclean.500"}
-                      fontWeight={500}
-                      backgroundColor={"white"}
+                  <Flex gap={2}>
+                    <ChakraLink
+                      as={ReactRouterLink}
+                      to={`/detail-my-service/${index}`}
                     >
-                      Detail Service
+                      <Button
+                        rightIcon={<ArrowForwardIcon />}
+                        size={"sm"}
+                        textColor={"aclean.500"}
+                        fontWeight={500}
+                        backgroundColor={"white"}
+                      >
+                        Detail Service
+                      </Button>
+                    </ChakraLink>
+                    <Button
+                      leftIcon={<DeleteIcon />}
+                      size={"sm"}
+                      colorScheme="red"
+                      onClick={() => deleteService(index)}
+                    >
+                      Delete Service
                     </Button>
-                  </ChakraLink>
-
-                  <Button
-                    rightIcon={<ArrowForwardIcon />}
-                    size={"sm"}
-                    textColor={"aclean.500"}
-                    fontWeight={500}
-                    backgroundColor={"red.500"}
-                    onClick={() => deleteService(index)}
-                  >
-                    Delete Service
-                  </Button>
+                  </Flex>
                 </Flex>
               </CardBody>
             </Card>

@@ -13,11 +13,21 @@ contract ServiceContract {
         string currency;
     }
 
+    struct Order {
+        address user;
+        uint256 serviceId;
+        bool isCompleted;
+    }
+
     mapping(address => Service[]) public services;
+    mapping(uint256 => Order) public orders;
     address[] public serviceProviders;
+    uint256 public orderCount;
 
     event ServiceAdded(address indexed user, string name);
     event ServiceDeleted(address indexed user, string name);
+    event OrderPlaced(address indexed user, uint256 serviceId, uint256 orderId);
+    event OrderCompleted(uint256 orderId);
 
     function addService(
         string memory _logo,
@@ -87,5 +97,43 @@ contract ServiceContract {
         }
 
         return allServices;
+    }
+
+    function placeOrder(uint256 serviceId) public payable {
+        Service memory service = getServiceById(serviceId);
+        require(msg.value == service.cost, "Incorrect payment amount");
+
+        orders[orderCount] = Order({
+            user: msg.sender,
+            serviceId: serviceId,
+            isCompleted: false
+        });
+
+        emit OrderPlaced(msg.sender, serviceId, orderCount);
+        orderCount++;
+    }
+
+    function confirmOrder(uint256 orderId) public {
+        Order storage order = orders[orderId];
+        require(order.user == msg.sender, "Only the user who placed the order can confirm it");
+
+        order.isCompleted = true;
+        Service memory service = getServiceById(order.serviceId);
+        payable(serviceProviders[order.serviceId]).transfer(service.cost);
+
+        emit OrderCompleted(orderId);
+    }
+
+    function getServiceById(uint256 serviceId) internal view returns (Service memory) {
+        uint counter = 0;
+        for (uint i = 0; i < serviceProviders.length; i++) {
+            for (uint j = 0; j < services[serviceProviders[i]].length; j++) {
+                if (counter == serviceId) {
+                    return services[serviceProviders[i]][j];
+                }
+                counter++;
+            }
+        }
+        revert("Service not found");
     }
 }
