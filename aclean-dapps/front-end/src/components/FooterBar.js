@@ -3,14 +3,10 @@ import {
 	Heading,
 	Flex,
 	Spacer,
-	Center,
 	Container,
-	Button,
 	Link as ChakraLink,
-	VStack,
 	Text,
 } from '@chakra-ui/react';
-import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { Link as ReactRouterLink } from 'react-router-dom';
 
 export const FooterBar = () => {
@@ -55,7 +51,7 @@ export const FooterBar = () => {
 									fontSize={'sm'}>
 									<ChakraLink
 										as={ReactRouterLink}
-										href="#">
+										to="/detail-transaction">
 										Transaction History
 									</ChakraLink>
 									<ChakraLink

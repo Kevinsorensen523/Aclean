@@ -9,7 +9,10 @@ import {
 	Link as ChakraLink,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon } from '@chakra-ui/icons';
-import { Link as ReactRouterLink } from 'react-router-dom';
+import {
+	Link as ReactRouterLink,
+	NavLink as RouterLink,
+} from 'react-router-dom';
 
 export const NavigationBar = () => {
 	return (
@@ -47,18 +50,21 @@ export const NavigationBar = () => {
 								gap={3}
 								fontSize={'sm'}>
 								<ChakraLink
-									as={ReactRouterLink}
-									href="#">
+									as={RouterLink}
+									to="/transaction-history"
+									_activeLink={{ fontWeight: 900 }}>
 									Transaction History
 								</ChakraLink>
 								<ChakraLink
-									as={ReactRouterLink}
-									href="#">
-									My Workspace
+									as={RouterLink}
+									to="/my-service"
+									_activeLink={{ fontWeight: 900 }}>
+									My Service
 								</ChakraLink>
 								<ChakraLink
-									as={ReactRouterLink}
-									href="#">
+									as={RouterLink}
+									to="/about-us"
+									_activeLink={{ fontWeight: 900 }}>
 									About Us
 								</ChakraLink>
 							</Center>
@@ -68,11 +74,12 @@ export const NavigationBar = () => {
 									href="https://google.com"
 									isExternal>
 									<Button
+										rightIcon={<ExternalLinkIcon />}
 										size={'sm'}
 										fontWeight={'500'}
 										bgColor={'white'}
 										textColor={'aclean.500'}>
-										Connect to Wallet <ExternalLinkIcon ml={2} />
+										Connect to Wallet
 									</Button>
 								</ChakraLink>
 							</Center>

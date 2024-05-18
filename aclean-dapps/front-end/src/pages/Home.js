@@ -2,7 +2,6 @@ import {
 	Box,
 	Heading,
 	Flex,
-	Spacer,
 	Center,
 	Container,
 	Button,
@@ -10,24 +9,16 @@ import {
 	Link as ChakraLink,
 	Input,
 	Select,
-	HStack,
 	Stack,
 	InputRightElement,
 	InputGroup,
 	Card,
-	CardHeader,
 	CardBody,
 	CardFooter,
 	Image,
-	Badge,
 	Tag,
 } from '@chakra-ui/react';
-import {
-	ExternalLinkIcon,
-	SearchIcon,
-	ArrowRightIcon,
-	ArrowLeftIcon,
-} from '@chakra-ui/icons';
+import { SearchIcon, ArrowForwardIcon, ArrowBackIcon } from '@chakra-ui/icons';
 import { Link as ReactRouterLink } from 'react-router-dom';
 import { NavigationBar } from '../components/NavigationBar';
 import { FooterBar } from '../components/FooterBar';
@@ -65,17 +56,24 @@ export const Home = () => {
 							</Heading>
 						</Center>
 					</Box>
-					<Box paddingY={10}>
+					<Box
+						paddingY={10}
+						textColor={'black'}>
 						<Flex
 							gap={4}
 							direction={'row'}>
-							<Select width={'max-content'}>
+							<Select
+								width={'max-content'}
+								backgroundColor={'white'}>
 								<option value="all">All Category</option>
 								<option value="option2">Option 2</option>
 								<option value="option3">Option 3</option>
 							</Select>
 							<InputGroup size="md">
-								<Input placeholder="Search something here..." />
+								<Input
+									backgroundColor={'white'}
+									placeholder="Search something here..."
+								/>
 								<InputRightElement marginRight={1}>
 									<Button
 										size="sm"
@@ -139,7 +137,7 @@ export const Home = () => {
 											<Heading
 												size="xl"
 												fontStyle={'italic'}>
-												AC Service A
+												AC Service {index + 1}
 											</Heading>
 											<Text fontFamily={'heading'}>Owner</Text>
 
@@ -160,13 +158,17 @@ export const Home = () => {
 										</CardBody>
 
 										<CardFooter>
-											<Button
-												width={'full'}
-												size={'sm'}
-												variant="solid"
-												textColor={'aclean.500'}>
-												More Detail <ArrowRightIcon ml={2} />
-											</Button>
+											<ChakraLink
+												as={ReactRouterLink}
+												to={`/detail-service/${index + 1}`}>
+												<Button
+													width={'full'}
+													size={'sm'}
+													variant="solid"
+													textColor={'aclean.500'}>
+													More <ArrowForwardIcon ml={2} />
+												</Button>
+											</ChakraLink>
 										</CardFooter>
 									</Stack>
 								</Card>
@@ -178,7 +180,7 @@ export const Home = () => {
 						gap={2}
 						justifyContent={'center'}>
 						<Button textColor={'aclean.500'}>
-							<ArrowLeftIcon />
+							<ArrowBackIcon />
 						</Button>
 						<Button
 							variant={'solid'}
@@ -188,7 +190,7 @@ export const Home = () => {
 						<Button textColor={'aclean.500'}>2</Button>
 						<Button textColor={'aclean.500'}>3</Button>
 						<Button textColor={'aclean.500'}>
-							<ArrowRightIcon />
+							<ArrowForwardIcon />
 						</Button>
 					</Flex>
 				</Container>
