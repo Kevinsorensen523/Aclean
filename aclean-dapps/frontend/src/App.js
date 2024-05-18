@@ -1,106 +1,143 @@
+import React, { useState, useEffect } from "react";
 import Web3 from "web3";
-import { useState, useEffect } from "react";
+import PaymentContract from "./PaymentContract.json"; // Adjust the path if necessary
 
 function App() {
-  const [account, setAccount] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [accountBalances, setAccountBalances] = useState({});
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [contract, setContract] = useState(null);
   const [balance, setBalance] = useState("");
-  const [amount, setAmount] = useState(""); // untuk menyimpan jumlah ETH yang akan ditransfer
-  const [recipient, setRecipient] = useState(""); // untuk menyimpan alamat tujuan
+  const [amount, setAmount] = useState("");
 
   useEffect(() => {
-    if (window.ethereum) {
-      const web3 = new Web3(window.ethereum);
-    } else {
-      console.log("Please install MetaMask to use this app.");
-    }
+    loadWeb3();
   }, []);
+
+  useEffect(() => {
+    if (selectedAccount) {
+      loadBlockchainData();
+    }
+  }, [selectedAccount]);
+
+  const loadWeb3 = async () => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum);
+      console.log("Web3 instance initialized with MetaMask");
+    } else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider);
+      console.log("Web3 instance initialized with web3 provider");
+    } else {
+      window.alert("Non-Ethereum browser detected. Consider trying MetaMask!");
+    }
+  };
+
+  const loadBlockchainData = async () => {
+    const web3 = window.web3;
+    const accounts = await web3.eth.getAccounts();
+    console.log("Accounts:", accounts);
+    setAccounts(accounts);
+
+    // Fetch and set balance for each account
+    const balances = {};
+    for (let account of accounts) {
+      const balance = await web3.eth.getBalance(account);
+      balances[account] = web3.utils.fromWei(balance, "ether");
+    }
+    setAccountBalances(balances);
+
+    const networkId = await web3.eth.net.getId();
+    console.log("Network ID:", networkId);
+    const networkData = PaymentContract.networks[networkId];
+    if (networkData) {
+      const paymentContract = new web3.eth.Contract(
+        PaymentContract.abi,
+        networkData.address
+      );
+      setContract(paymentContract);
+      console.log("Contract instance:", paymentContract);
+    } else {
+      window.alert("Smart contract not deployed to detected network.");
+    }
+  };
 
   const connectMetaMask = async () => {
     if (window.ethereum) {
       try {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const web3 = new Web3(window.ethereum);
-        const accounts = await web3.eth.getAccounts();
-        setAccount(accounts[0]);
-        getBalance(accounts[0], web3);
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setSelectedAccount(accounts[0]);
+        console.log("MetaMask account connected:", accounts[0]);
       } catch (error) {
-        console.error("Error connecting to MetaMask:", error);
+        console.error("User denied account access", error);
       }
     } else {
-      alert("Please install MetaMask!");
+      window.alert("Please install MetaMask!");
     }
   };
 
-  const getBalance = async (account, web3) => {
-    const balanceWei = await web3.eth.getBalance(account);
-    const balanceEth = web3.utils.fromWei(balanceWei, "ether");
-    setBalance(balanceEth);
+  const disconnectMetaMask = () => {
+    setAccounts([]);
+    setAccountBalances({});
+    setSelectedAccount(null);
+    setContract(null);
+    setBalance("");
+    setAmount("");
+    console.log("MetaMask disconnected");
   };
 
-  const handleTransfer = async () => {
-    if (!amount || !recipient) {
-      alert("Please enter amount and recipient address!");
-      return;
-    }
-
-    const web3 = new Web3(window.ethereum);
-
+  const getBalance = async () => {
     try {
-      const accounts = await web3.eth.getAccounts();
-      const networkId = await web3.eth.net.getId();
-      const gasPrice = await web3.eth.getGasPrice();
-
-      // Get the latest block to find the base fee
-      const latestBlock = await web3.eth.getBlock("latest");
-      const baseFee = latestBlock.baseFeePerGas;
-      const maxPriorityFeePerGas = web3.utils.toWei("2", "gwei"); // Set this higher in a high congestion period
-
-      // Calculate maxFeePerGas
-      const maxFeePerGas = web3.utils
-        .toBN(baseFee)
-        .add(web3.utils.toBN(maxPriorityFeePerGas));
-
-      const transactionParameters = {
-        from: accounts[0],
-        to: recipient,
-        value: web3.utils.toWei(amount, "ether"),
-        gas: 21000, // Standard gas limit for ETH transfer
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
-        maxFeePerGas: maxFeePerGas.toString(),
-      };
-
-      await web3.eth.sendTransaction(transactionParameters);
-      alert("Transfer successful!");
-      getBalance(accounts[0], web3); // Update balance after transfer
+      const bal = await contract.methods.getBalance().call();
+      setBalance(bal);
     } catch (error) {
-      console.error("Transfer failed:", error);
-      alert("Transfer failed: " + error.message);
-      console.log(Web3.version);
+      console.error("Error getting balance:", error);
+    }
+  };
+
+  const depositEther = async () => {
+    try {
+      await contract.methods
+        .deposit()
+        .send({
+          from: selectedAccount,
+          value: Web3.utils.toWei(amount, "ether"),
+        });
+      alert("Deposit successful!");
+    } catch (error) {
+      console.error("Error depositing ether:", error);
     }
   };
 
   return (
-    <div className="App">
-      <button onClick={connectMetaMask}>Connect to MetaMask</button>
-      {account && (
+    <div>
+      <h1>Payment Contract</h1>
+      {selectedAccount ? (
         <div>
-          <p>Connected Account: {account}</p>
-          <p>Balance: {balance} ETH</p>
+          <p>Connected Account: {selectedAccount}</p>
+          <button onClick={getBalance}>Check Contract Balance</button>
+          <p>Contract Balance: {balance}</p>
           <input
             type="text"
-            placeholder="Amount in ETH"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount in ETH"
           />
-          <input
-            type="text"
-            placeholder="Recipient Address"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-          />
-          <button onClick={handleTransfer}>Transfer ETH</button>
+          <button onClick={depositEther}>Deposit Ether</button>
+          <button onClick={disconnectMetaMask}>Disconnect MetaMask</button>
         </div>
+      ) : (
+        <button onClick={connectMetaMask}>Connect MetaMask</button>
       )}
+      <h2>All Accounts</h2>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account}>
+            {account} - {accountBalances[account]} ETH
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
