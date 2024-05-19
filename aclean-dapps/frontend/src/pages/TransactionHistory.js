@@ -123,6 +123,7 @@ export const TransactionHistory = () => {
         duration: 5000,
         isClosable: true,
       });
+      console.log("Using account:", account);
     }
   };
 
