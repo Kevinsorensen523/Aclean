@@ -18,10 +18,13 @@ contract ServiceContract {
         address user;
         uint256 serviceId;
         bool isCompleted;
+        string serviceName;
+        uint256 serviceCost;
+        string serviceCurrency;
     }
 
     mapping(address => Service[]) public services;
-    mapping(uint256 => Order) public orders;
+    Order[] public orders;
     address[] public serviceProviders;
     uint256 public orderCount;
 
@@ -104,13 +107,15 @@ contract ServiceContract {
 
     function placeOrder(uint256 serviceId) public payable {
         Service memory service = getServiceById(serviceId);
-        require(msg.value == service.cost, "Incorrect payment amount");
 
-        orders[orderCount] = Order({
+        orders.push(Order({
             user: msg.sender,
             serviceId: serviceId,
-            isCompleted: false
-        });
+            isCompleted: false,
+            serviceName: service.name,
+            serviceCost: service.cost,
+            serviceCurrency: service.currency 
+        }));
 
         emit OrderPlaced(msg.sender, serviceId, orderCount);
         orderCount++;
@@ -138,5 +143,32 @@ contract ServiceContract {
             }
         }
         revert("Service not found");
+    }
+
+    function getAllOrders() public view returns (Order[] memory) {
+    Order[] memory allOrders = new Order[](orderCount);
+    for (uint i = 0; i < orderCount; i++) {
+        allOrders[i] = orders[i];
+    }
+        return allOrders;
+    }
+
+    function getOrdersByStatus(bool isCompleted) public view returns (Order[] memory) {
+        uint count = 0;
+        for (uint i = 0; i < orderCount; i++) {
+            if (orders[i].isCompleted == isCompleted) {
+                count++;
+            }
+        }
+
+        Order[] memory filteredOrders = new Order[](count);
+        uint index = 0;
+        for (uint i = 0; i < orderCount; i++) {
+            if (orders[i].isCompleted == isCompleted) {
+                filteredOrders[index] = orders[i];
+                index++;
+            }
+        }
+        return filteredOrders;
     }
 }

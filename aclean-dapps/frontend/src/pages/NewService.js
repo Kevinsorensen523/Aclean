@@ -163,22 +163,22 @@ export const NewService = () => {
                     Select Category...
                   </option>
                   <option
-                    value="option1"
+                    value="Cuci AC"
                     style={{ backgroundColor: "#00A991" }}
                   >
-                    Option 1
+                    Cuci AC
                   </option>
                   <option
-                    value="option2"
+                    value="Tambah Freon"
                     style={{ backgroundColor: "#00A991" }}
                   >
-                    Option 2
+                    Tambah Freon
                   </option>
                   <option
-                    value="option3"
+                    value="Pasang AC"
                     style={{ backgroundColor: "#00A991" }}
                   >
-                    Option 3
+                    Pasang AC
                   </option>
                 </Select>
               </Stack>

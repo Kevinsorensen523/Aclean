@@ -38,46 +38,52 @@ export const OrderService = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const toast = useToast();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    loadWeb3();
-    loadBlockchainData();
-  }, []);
+    const loadWeb3 = async () => {
+      if (window.ethereum) {
+        window.web3 = new Web3(window.ethereum);
+        try {
+          await window.ethereum.enable();
+        } catch (error) {
+          console.error("User denied account access");
+        }
+      } else if (window.web3) {
+        window.web3 = new Web3(window.web3.currentProvider);
+      } else {
+        window.alert(
+          "Non-Ethereum browser detected. Consider trying MetaMask!"
+        );
+        return;
+      }
 
-  const loadWeb3 = async () => {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
-    } else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider);
-    } else {
-      window.alert("Non-Ethereum browser detected. Consider trying MetaMask!");
-    }
-  };
+      const web3 = window.web3;
+      const accounts = await web3.eth.getAccounts();
+      setAccount(accounts[0]);
 
-  const loadBlockchainData = async () => {
-    const web3 = window.web3;
-    const accounts = await web3.eth.getAccounts();
-    setAccount(accounts[0]);
+      const networkId = await web3.eth.net.getId();
+      const deployedNetwork = ServiceContract.networks[networkId];
+      if (deployedNetwork) {
+        const contractInstance = new web3.eth.Contract(
+          ServiceContract.abi,
+          deployedNetwork.address
+        );
+        setContract(contractInstance);
+        loadServiceData(contractInstance);
+      } else {
+        window.alert("Smart contract not deployed to detected network.");
+      }
+    };
 
-    const networkId = await web3.eth.net.getId();
-    const deployedNetwork = ServiceContract.networks[networkId];
-    if (deployedNetwork) {
-      const contractInstance = new web3.eth.Contract(
-        ServiceContract.abi,
-        deployedNetwork.address
-      );
-      setContract(contractInstance);
-
+    const loadServiceData = async (contractInstance) => {
       try {
         const serviceData = await contractInstance.methods
           .getServiceById(id)
           .call();
         setService(serviceData);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching service data", error);
         toast({
@@ -87,11 +93,18 @@ export const OrderService = () => {
           duration: 5000,
           isClosable: true,
         });
+      } finally {
+        setLoading(false);
       }
-    } else {
-      window.alert("Smart contract not deployed to detected network.");
-    }
-  };
+    };
+
+    loadWeb3();
+
+    // Cleanup function
+    return () => {
+      setService(null); // Clean up service data
+    };
+  }, [id]); // Dependency array includes 'id' to reload data when id changes
 
   const handleOrder = async () => {
     if (!fullName || !address || !phoneNumber || !email) {
@@ -105,10 +118,11 @@ export const OrderService = () => {
       return;
     }
 
-    if (account === service.owner) {
+    if (!service || account === service.owner) {
       toast({
         title: "Error",
-        description: "You cannot order your own service",
+        description:
+          "Invalid service details or you cannot order your own service",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -117,12 +131,14 @@ export const OrderService = () => {
     }
 
     try {
-      await contract.methods.placeOrder(id).send({
+      const valueInWei = Web3.utils.toWei(service.cost.toString(), "ether");
+      const transactionReceipt = await contract.methods.placeOrder(id).send({
         from: account,
-        value: Web3.utils.toWei(service.cost.toString(), "ether"),
-        gas: 3000000, // Specify a higher gas limit
+        value: valueInWei,
+        gas: 3000000, // You might want to adjust gas based on your contract's needs
       });
 
+      console.log("Transaction receipt:", transactionReceipt);
       toast({
         title: "Order placed",
         description: "Order placed successfully!",
@@ -135,7 +151,7 @@ export const OrderService = () => {
       console.error("Order placement failed", error);
       toast({
         title: "Error",
-        description: "Order placement failed",
+        description: `Order placement failed: ${error.message}`,
         status: "error",
         duration: 5000,
         isClosable: true,
