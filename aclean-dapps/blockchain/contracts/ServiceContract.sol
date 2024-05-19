@@ -2,6 +2,8 @@
 pragma solidity >=0.8.19;
 
 contract ServiceContract {
+    enum OrderStatus { Pending, InProgress, Completed }
+
     struct Service {
         string logo;
         string name;
@@ -17,10 +19,10 @@ contract ServiceContract {
     struct Order {
         address user;
         uint256 serviceId;
-        bool isCompleted;
         string serviceName;
         uint256 serviceCost;
         string serviceCurrency;
+        OrderStatus status;
     }
 
     mapping(address => Service[]) public services;
@@ -31,7 +33,7 @@ contract ServiceContract {
     event ServiceAdded(address indexed user, string name);
     event ServiceDeleted(address indexed user, string name);
     event OrderPlaced(address indexed user, uint256 serviceId, uint256 orderId);
-    event OrderCompleted(uint256 orderId);
+    event OrderStatusChanged(uint256 orderId, OrderStatus status);
 
     function addService(
         string memory _logo,
@@ -111,25 +113,34 @@ contract ServiceContract {
         orders.push(Order({
             user: msg.sender,
             serviceId: serviceId,
-            isCompleted: false,
             serviceName: service.name,
             serviceCost: service.cost,
-            serviceCurrency: service.currency 
+            serviceCurrency: service.currency,
+            status: OrderStatus.Pending
         }));
 
         emit OrderPlaced(msg.sender, serviceId, orderCount);
         orderCount++;
     }
 
+    function startOrder(uint256 orderId) public {
+        Order storage order = orders[orderId];
+        Service memory service = getServiceById(order.serviceId);
+        require(service.owner == msg.sender, "Only the service provider can start the order");
+
+        order.status = OrderStatus.InProgress;
+        emit OrderStatusChanged(orderId, OrderStatus.InProgress);
+    }
+
     function confirmOrder(uint256 orderId) public {
         Order storage order = orders[orderId];
         require(order.user == msg.sender, "Only the user who placed the order can confirm it");
 
-        order.isCompleted = true;
+        order.status = OrderStatus.Completed;
         Service memory service = getServiceById(order.serviceId);
         payable(service.owner).transfer(service.cost);
 
-        emit OrderCompleted(orderId);
+        emit OrderStatusChanged(orderId, OrderStatus.Completed);
     }
 
     function getServiceById(uint256 serviceId) public view returns (Service memory) {
@@ -146,17 +157,17 @@ contract ServiceContract {
     }
 
     function getAllOrders() public view returns (Order[] memory) {
-    Order[] memory allOrders = new Order[](orderCount);
-    for (uint i = 0; i < orderCount; i++) {
-        allOrders[i] = orders[i];
-    }
+        Order[] memory allOrders = new Order[](orderCount);
+        for (uint i = 0; i < orderCount; i++) {
+            allOrders[i] = orders[i];
+        }
         return allOrders;
     }
 
     function getOrdersByStatus(bool isCompleted) public view returns (Order[] memory) {
         uint count = 0;
         for (uint i = 0; i < orderCount; i++) {
-            if (orders[i].isCompleted == isCompleted) {
+            if ((orders[i].status == OrderStatus.Completed) == isCompleted) {
                 count++;
             }
         }
@@ -164,7 +175,7 @@ contract ServiceContract {
         Order[] memory filteredOrders = new Order[](count);
         uint index = 0;
         for (uint i = 0; i < orderCount; i++) {
-            if (orders[i].isCompleted == isCompleted) {
+            if ((orders[i].status == OrderStatus.Completed) == isCompleted) {
                 filteredOrders[index] = orders[i];
                 index++;
             }
