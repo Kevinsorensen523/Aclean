@@ -117,7 +117,7 @@ export const DetailMyService = () => {
               <Center>
                 <Image
                   objectFit="cover"
-                  src={service.logo}
+                  src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
                   alt="Service Image"
                   borderRadius={"lg"}
                   boxSize={"sm"}
@@ -233,7 +233,7 @@ export const DetailMyService = () => {
 
         <Flex paddingTop={4} gap={2} justifyContent={"center"}>
           <ChakraLink as={ReactRouterLink} to="/order-service">
-            <Button
+            {/* <Button
               leftIcon={
                 <Icon viewBox="0 0 576 512" color={"white"}>
                   <path
@@ -248,7 +248,7 @@ export const DetailMyService = () => {
               fontWeight={500}
             >
               Order Service
-            </Button>
+            </Button> */}
           </ChakraLink>
         </Flex>
       </Container>

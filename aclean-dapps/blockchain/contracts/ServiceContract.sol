@@ -123,7 +123,6 @@ contract ServiceContract {
         require(keccak256(bytes(order.status)) == keccak256(bytes("Pending")), "Order must be pending");
         Service memory service = getServiceById(order.serviceId);
         require(service.owner == msg.sender, "Only the service provider can start the order");
-
         order.status = "In Progress";
         emit OrderStarted(orderId);
     }

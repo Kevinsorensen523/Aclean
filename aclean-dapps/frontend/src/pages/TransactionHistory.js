@@ -29,50 +29,76 @@ export const TransactionHistory = () => {
   const [userOrders, setUserOrders] = useState([]);
   const [providerOrders, setProviderOrders] = useState([]);
   const [services, setServices] = useState([]);
+  const [contract, setContract] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
-    loadWeb3();
+    initializeWeb3();
   }, []);
 
   useEffect(() => {
-    if (account) {
+    if (account && contract) {
+      console.log("Account and contract are set, loading orders...");
       loadOrders();
     }
-  }, [account]);
+  }, [account, contract]);
 
-  const loadWeb3 = async () => {
+  const initializeWeb3 = async () => {
     if (window.ethereum) {
-      const web3 = new Web3(window.ethereum);
       try {
-        await window.ethereum.enable();
+        const web3 = new Web3(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
         const accounts = await web3.eth.getAccounts();
         setAccount(accounts[0]);
         console.log("Connected account:", accounts[0]);
+
+        const networkId = await web3.eth.net.getId();
+        const deployedNetwork = ServiceContract.networks[networkId];
+        if (!deployedNetwork) {
+          console.error("Smart contract not deployed on detected network.");
+          toast({
+            title: "Contract Error",
+            description: "Smart contract not deployed on detected network",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+          return;
+        }
+        const contractInstance = new web3.eth.Contract(
+          ServiceContract.abi,
+          deployedNetwork.address
+        );
+        setContract(contractInstance);
+        console.log("Contract address:", deployedNetwork.address);
       } catch (error) {
-        console.error("User denied account access");
+        console.error(
+          "User denied account access or another error occurred:",
+          error
+        );
+        toast({
+          title: "Access Denied",
+          description: "Please allow account access to use this app",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     } else {
-      console.log(
-        "Non-Ethereum browser detected. You should consider trying MetaMask!"
-      );
+      console.log("Non-Ethereum browser detected. Consider trying MetaMask!");
+      toast({
+        title: "MetaMask Required",
+        description: "Please install MetaMask to use this app",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
   const loadOrders = async () => {
-    const web3 = new Web3(Web3.givenProvider || "http://localhost:7545");
-    const networkId = await web3.eth.net.getId();
-    const deployedNetwork = ServiceContract.networks[networkId];
-    if (!deployedNetwork) {
-      console.error("Smart contract not deployed on detected network.");
-      return;
-    }
-    const contract = new web3.eth.Contract(
-      ServiceContract.abi,
-      deployedNetwork.address
-    );
-
     try {
+      console.log("Loading orders for account:", account);
       const orders = await contract.methods.getAllOrders().call();
       const services = await contract.methods.getAllServices().call();
       setServices(services);
@@ -82,29 +108,31 @@ export const TransactionHistory = () => {
       );
       const providerOrders = orders.filter((order) => {
         const service = services[order.serviceId];
-        return service.owner.toLowerCase() === account.toLowerCase();
+        return service && service.owner.toLowerCase() === account.toLowerCase();
       });
 
       setUserOrders(userOrders);
       setProviderOrders(providerOrders);
-      console.log("User Orders: ", userOrders);
-      console.log("Provider Orders: ", providerOrders);
+      console.log("User Orders:", userOrders);
+      console.log("Provider Orders:", providerOrders);
     } catch (error) {
       console.error("Failed to load orders:", error);
+      toast({
+        title: "Load Error",
+        description: "Failed to load orders",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
   const startOrder = async (orderId) => {
     try {
-      const web3 = new Web3(Web3.givenProvider || "http://localhost:7545");
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = ServiceContract.networks[networkId];
-      const contract = new web3.eth.Contract(
-        ServiceContract.abi,
-        deployedNetwork && deployedNetwork.address
-      );
-
-      await contract.methods.startOrder(orderId).send({ from: account });
+      console.log("Starting order with account:", account);
+      await contract.methods
+        .startOrder(orderId)
+        .send({ from: account, gas: 3000000 });
       toast({
         title: "Order Started",
         description: `Order ${orderId} has been started.`,
@@ -115,29 +143,23 @@ export const TransactionHistory = () => {
 
       loadOrders();
     } catch (error) {
-      console.error("Failed to start the order", error);
+      console.error("Failed to start the order:", error);
       toast({
-        title: "Error",
-        description: "Failed to start the order.",
+        title: "Order Start Error",
+        description: `Failed to start the order: ${error.message}`,
         status: "error",
         duration: 5000,
         isClosable: true,
       });
-      console.log("Using account:", account);
     }
   };
 
   const confirmOrder = async (orderId) => {
     try {
-      const web3 = new Web3(Web3.givenProvider || "http://localhost:7545");
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = ServiceContract.networks[networkId];
-      const contract = new web3.eth.Contract(
-        ServiceContract.abi,
-        deployedNetwork && deployedNetwork.address
-      );
-
-      await contract.methods.confirmOrder(orderId).send({ from: account });
+      console.log("Confirming order with account:", account);
+      await contract.methods
+        .confirmOrder(orderId)
+        .send({ from: account, gas: 3000000 });
       toast({
         title: "Order Confirmed",
         description: `Order ${orderId} has been confirmed.`,
@@ -148,10 +170,10 @@ export const TransactionHistory = () => {
 
       loadOrders();
     } catch (error) {
-      console.error("Failed to confirm the order", error);
+      console.error("Failed to confirm the order:", error);
       toast({
-        title: "Error",
-        description: "Failed to confirm the order.",
+        title: "Order Confirm Error",
+        description: `Failed to confirm the order: ${error.message}`,
         status: "error",
         duration: 5000,
         isClosable: true,
