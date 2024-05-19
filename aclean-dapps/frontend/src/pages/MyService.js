@@ -161,7 +161,7 @@ export const MyService = () => {
               <Image
                 objectFit="cover"
                 maxW={{ base: "100%", sm: "150px" }}
-                src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
+                src={service.logo}
                 alt="Service Image"
               />
 

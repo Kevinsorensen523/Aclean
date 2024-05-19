@@ -80,7 +80,6 @@ contract ServiceContract {
         for (uint256 i = index; i < userServices.length - 1; i++) {
             userServices[i] = userServices[i + 1];
         }
-
         userServices.pop();
         emit ServiceDeleted(msg.sender, serviceName);
     }
