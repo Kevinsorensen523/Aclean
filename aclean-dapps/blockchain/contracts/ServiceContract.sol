@@ -2,8 +2,6 @@
 pragma solidity >=0.8.19;
 
 contract ServiceContract {
-    enum OrderStatus { Pending, InProgress, Completed }
-
     struct Service {
         string logo;
         string name;
@@ -19,10 +17,8 @@ contract ServiceContract {
     struct Order {
         address user;
         uint256 serviceId;
-        string serviceName;
-        uint256 serviceCost;
-        string serviceCurrency;
-        OrderStatus status;
+        bool isCompleted;
+        string status;
     }
 
     mapping(address => Service[]) public services;
@@ -33,7 +29,8 @@ contract ServiceContract {
     event ServiceAdded(address indexed user, string name);
     event ServiceDeleted(address indexed user, string name);
     event OrderPlaced(address indexed user, uint256 serviceId, uint256 orderId);
-    event OrderStatusChanged(uint256 orderId, OrderStatus status);
+    event OrderCompleted(uint256 orderId);
+    event OrderStarted(uint256 orderId);
 
     function addService(
         string memory _logo,
@@ -113,10 +110,8 @@ contract ServiceContract {
         orders.push(Order({
             user: msg.sender,
             serviceId: serviceId,
-            serviceName: service.name,
-            serviceCost: service.cost,
-            serviceCurrency: service.currency,
-            status: OrderStatus.Pending
+            isCompleted: false,
+            status: "Pending"
         }));
 
         emit OrderPlaced(msg.sender, serviceId, orderCount);
@@ -125,22 +120,22 @@ contract ServiceContract {
 
     function startOrder(uint256 orderId) public {
         Order storage order = orders[orderId];
+        require(keccak256(bytes(order.status)) == keccak256(bytes("Pending")), "Order must be pending");
         Service memory service = getServiceById(order.serviceId);
         require(service.owner == msg.sender, "Only the service provider can start the order");
 
-        order.status = OrderStatus.InProgress;
-        emit OrderStatusChanged(orderId, OrderStatus.InProgress);
+        order.status = "In Progress";
+        emit OrderStarted(orderId);
     }
 
     function confirmOrder(uint256 orderId) public {
         Order storage order = orders[orderId];
-        require(order.user == msg.sender, "Only the user who placed the order can confirm it");
-
-        order.status = OrderStatus.Completed;
+        require(keccak256(bytes(order.status)) == keccak256(bytes("In Progress")), "Order must be in progress");
+        require(order.user == msg.sender, "Only the customer can confirm the order");
+        order.status = "Completed";
         Service memory service = getServiceById(order.serviceId);
         payable(service.owner).transfer(service.cost);
-
-        emit OrderStatusChanged(orderId, OrderStatus.Completed);
+        emit OrderCompleted(orderId);
     }
 
     function getServiceById(uint256 serviceId) public view returns (Service memory) {
@@ -167,7 +162,7 @@ contract ServiceContract {
     function getOrdersByStatus(bool isCompleted) public view returns (Order[] memory) {
         uint count = 0;
         for (uint i = 0; i < orderCount; i++) {
-            if ((orders[i].status == OrderStatus.Completed) == isCompleted) {
+            if (orders[i].isCompleted == isCompleted) {
                 count++;
             }
         }
@@ -175,7 +170,7 @@ contract ServiceContract {
         Order[] memory filteredOrders = new Order[](count);
         uint index = 0;
         for (uint i = 0; i < orderCount; i++) {
-            if ((orders[i].status == OrderStatus.Completed) == isCompleted) {
+            if (orders[i].isCompleted == isCompleted) {
                 filteredOrders[index] = orders[i];
                 index++;
             }

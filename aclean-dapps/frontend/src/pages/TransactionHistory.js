@@ -43,10 +43,15 @@ export const TransactionHistory = () => {
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
-      const accounts = await window.web3.eth.getAccounts();
-      setAccount(accounts[0]);
+      const web3 = new Web3(window.ethereum);
+      try {
+        await window.ethereum.enable();
+        const accounts = await web3.eth.getAccounts();
+        setAccount(accounts[0]);
+        console.log("Connected account:", accounts[0]);
+      } catch (error) {
+        console.error("User denied account access");
+      }
     } else {
       console.log(
         "Non-Ethereum browser detected. You should consider trying MetaMask!"
@@ -58,30 +63,35 @@ export const TransactionHistory = () => {
     const web3 = new Web3(Web3.givenProvider || "http://localhost:7545");
     const networkId = await web3.eth.net.getId();
     const deployedNetwork = ServiceContract.networks[networkId];
+    if (!deployedNetwork) {
+      console.error("Smart contract not deployed on detected network.");
+      return;
+    }
     const contract = new web3.eth.Contract(
       ServiceContract.abi,
-      deployedNetwork && deployedNetwork.address
+      deployedNetwork.address
     );
 
-    const orders = await contract.methods.getAllOrders().call();
-    const services = await contract.methods.getAllServices().call();
-    setServices(services);
+    try {
+      const orders = await contract.methods.getAllOrders().call();
+      const services = await contract.methods.getAllServices().call();
+      setServices(services);
 
-    // Filter orders for user and provider
-    const userOrders = orders.filter(
-      (order) => order.user.toLowerCase() === account.toLowerCase()
-    );
-    const providerOrders = orders.filter((order) => {
-      const service = services[order.serviceId];
-      return service.owner.toLowerCase() === account.toLowerCase();
-    });
+      const userOrders = orders.filter(
+        (order) => order.user.toLowerCase() === account.toLowerCase()
+      );
+      const providerOrders = orders.filter((order) => {
+        const service = services[order.serviceId];
+        return service.owner.toLowerCase() === account.toLowerCase();
+      });
 
-    setUserOrders(userOrders);
-    setProviderOrders(providerOrders);
-  };
-
-  const getServiceDetails = (serviceId) => {
-    return services[serviceId];
+      setUserOrders(userOrders);
+      setProviderOrders(providerOrders);
+      console.log("User Orders: ", userOrders);
+      console.log("Provider Orders: ", providerOrders);
+    } catch (error) {
+      console.error("Failed to load orders:", error);
+    }
   };
 
   const startOrder = async (orderId) => {
@@ -96,14 +106,16 @@ export const TransactionHistory = () => {
 
       await contract.methods.startOrder(orderId).send({ from: account });
       toast({
-        title: "Order started.",
-        description: "The order is now in progress.",
+        title: "Order Started",
+        description: `Order ${orderId} has been started.`,
         status: "success",
         duration: 5000,
         isClosable: true,
       });
+
       loadOrders();
     } catch (error) {
+      console.error("Failed to start the order", error);
       toast({
         title: "Error",
         description: "Failed to start the order.",
@@ -126,22 +138,28 @@ export const TransactionHistory = () => {
 
       await contract.methods.confirmOrder(orderId).send({ from: account });
       toast({
-        title: "Order completed.",
-        description: "The order has been completed successfully.",
+        title: "Order Confirmed",
+        description: `Order ${orderId} has been confirmed.`,
         status: "success",
         duration: 5000,
         isClosable: true,
       });
+
       loadOrders();
     } catch (error) {
+      console.error("Failed to confirm the order", error);
       toast({
         title: "Error",
-        description: "Failed to complete the order.",
+        description: "Failed to confirm the order.",
         status: "error",
         duration: 5000,
         isClosable: true,
       });
     }
+  };
+
+  const getServiceDetails = (serviceId) => {
+    return services[serviceId];
   };
 
   return (
@@ -160,9 +178,8 @@ export const TransactionHistory = () => {
           <Flex gap={4} direction={"row"}>
             <Select width={"max-content"} backgroundColor={"white"}>
               <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="inProgress">In Progress</option>
               <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
             </Select>
             <InputGroup size="md">
               <Input
@@ -206,18 +223,14 @@ export const TransactionHistory = () => {
                         colorScheme={
                           order.status === "Completed"
                             ? "green"
-                            : order.status === "InProgress"
-                            ? "yellow"
+                            : order.status === "In Progress"
+                            ? "orange"
                             : "red"
                         }
                         size={"sm"}
                         rounded={"full"}
                       >
-                        {order.status === "Completed"
-                          ? "Completed"
-                          : order.status === "InProgress"
-                          ? "In Progress"
-                          : "Pending"}
+                        {order.status}
                       </Tag>
                       <Box>
                         <Text fontSize={"xs"}>{new Date().toUTCString()}</Text>
@@ -250,17 +263,6 @@ export const TransactionHistory = () => {
                           {service.cost} {service.currency}
                         </Text>
                       </Stack>
-                      {order.status === "InProgress" && (
-                        <Button
-                          onClick={() => confirmOrder(index)}
-                          size={"sm"}
-                          textColor={"aclean.500"}
-                          fontWeight={500}
-                          backgroundColor={"white"}
-                        >
-                          Confirm Completion
-                        </Button>
-                      )}
                       <ChakraLink
                         as={ReactRouterLink}
                         to={`/detail-transaction/${index}`}
@@ -275,6 +277,15 @@ export const TransactionHistory = () => {
                           Detail Transaction
                         </Button>
                       </ChakraLink>
+                      {order.status === "In Progress" && (
+                        <Button
+                          size={"sm"}
+                          colorScheme="green"
+                          onClick={() => confirmOrder(order.serviceId)}
+                        >
+                          Confirm Completion
+                        </Button>
+                      )}
                     </Stack>
                   </Flex>
                 </CardBody>
@@ -310,18 +321,14 @@ export const TransactionHistory = () => {
                         colorScheme={
                           order.status === "Completed"
                             ? "green"
-                            : order.status === "InProgress"
-                            ? "yellow"
+                            : order.status === "In Progress"
+                            ? "orange"
                             : "red"
                         }
                         size={"sm"}
                         rounded={"full"}
                       >
-                        {order.status === "Completed"
-                          ? "Completed"
-                          : order.status === "InProgress"
-                          ? "In Progress"
-                          : "Pending"}
+                        {order.status}
                       </Tag>
                       <Box>
                         <Text fontSize={"xs"}>{new Date().toUTCString()}</Text>
@@ -354,17 +361,6 @@ export const TransactionHistory = () => {
                           {service.cost} {service.currency}
                         </Text>
                       </Stack>
-                      {order.status === "Pending" && (
-                        <Button
-                          onClick={() => startOrder(index)}
-                          size={"sm"}
-                          textColor={"aclean.500"}
-                          fontWeight={500}
-                          backgroundColor={"white"}
-                        >
-                          Start Order
-                        </Button>
-                      )}
                       <ChakraLink
                         as={ReactRouterLink}
                         to={`/detail-transaction/${index}`}
@@ -379,6 +375,15 @@ export const TransactionHistory = () => {
                           Detail Transaction
                         </Button>
                       </ChakraLink>
+                      {order.status === "Pending" && (
+                        <Button
+                          size={"sm"}
+                          colorScheme="orange"
+                          onClick={() => startOrder(order.serviceId)}
+                        >
+                          Start Order
+                        </Button>
+                      )}
                     </Stack>
                   </Flex>
                 </CardBody>
