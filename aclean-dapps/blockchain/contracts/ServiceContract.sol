@@ -11,6 +11,7 @@ contract ServiceContract {
         string email;
         uint256 cost;
         string currency;
+        address owner;
     }
 
     struct Order {
@@ -55,7 +56,8 @@ contract ServiceContract {
             phoneNumber: _phoneNumber,
             email: _email,
             cost: _cost,
-            currency: _currency
+            currency: _currency,
+            owner: msg.sender
         });
 
         services[msg.sender].push(newService);
@@ -121,12 +123,12 @@ contract ServiceContract {
 
         order.isCompleted = true;
         Service memory service = getServiceById(order.serviceId);
-        payable(serviceProviders[order.serviceId]).transfer(service.cost);
+        payable(service.owner).transfer(service.cost);
 
         emit OrderCompleted(orderId);
     }
 
-    function getServiceById(uint256 serviceId) internal view returns (Service memory) {
+    function getServiceById(uint256 serviceId) public view returns (Service memory) {
         uint counter = 0;
         for (uint i = 0; i < serviceProviders.length; i++) {
             for (uint j = 0; j < services[serviceProviders[i]].length; j++) {

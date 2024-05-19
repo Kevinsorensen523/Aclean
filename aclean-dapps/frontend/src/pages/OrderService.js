@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -8,7 +9,6 @@ import {
   CardBody,
   Flex,
   Tag,
-  Center,
   Text,
   Input,
   Textarea,
@@ -16,14 +16,17 @@ import {
   Button,
   Icon,
   Link as ChakraLink,
+  useToast,
 } from "@chakra-ui/react";
 import { FooterBar } from "../components/FooterBar";
 import { NavigationBar } from "../components/NavigationBar";
-import { useEffect } from "react";
-import { Link as ReactRouterLink, useNavigate } from "react-router-dom";
+import {
+  useParams,
+  Link as ReactRouterLink,
+  useNavigate,
+} from "react-router-dom";
 import Web3 from "web3";
 import ServiceContract from "./../contracts/ServiceContract.json";
-import react, { useState } from "react";
 
 export const OrderService = () => {
   const [account, setAccount] = useState(null);
@@ -33,8 +36,10 @@ export const OrderService = () => {
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
-
-  let history = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const { id } = useParams();
+  let navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -67,8 +72,22 @@ export const OrderService = () => {
       );
       setContract(contractInstance);
 
-      const services = await contractInstance.methods.getAllServices().call();
-      setService(services[0]); // Replace with logic to select the correct service
+      try {
+        const serviceData = await contractInstance.methods
+          .getServiceById(id)
+          .call();
+        setService(serviceData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching service data", error);
+        toast({
+          title: "Error",
+          description: "Failed to load service data",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } else {
       window.alert("Smart contract not deployed to detected network.");
     }
@@ -76,28 +95,50 @@ export const OrderService = () => {
 
   const handleOrder = async () => {
     if (!fullName || !address || !phoneNumber || !email) {
-      window.alert("Please fill in all fields");
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
       return;
     }
 
     if (account === service.owner) {
-      window.alert("You cannot order your own service");
+      toast({
+        title: "Error",
+        description: "You cannot order your own service",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
       return;
     }
 
     try {
-      await contract.methods
-        .placeOrder(0) // Replace with logic to select the correct service ID
-        .send({
-          from: account,
-          value: window.web3.utils.toWei(service.cost.toString(), "ether"),
-        });
+      await contract.methods.placeOrder(id).send({
+        from: account,
+        value: Web3.utils.toWei(service.cost.toString(), "ether"),
+      });
 
-      window.alert("Order placed successfully!");
-      history("/"); // Redirect to the home page or another page
+      toast({
+        title: "Order placed",
+        description: "Order placed successfully!",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      navigate("/");
     } catch (error) {
       console.error("Order placement failed", error);
-      window.alert("Order placement failed");
+      toast({
+        title: "Error",
+        description: "Order placement failed",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -115,128 +156,132 @@ export const OrderService = () => {
           Order Service
         </Heading>
 
-        <Stack spacing={3}>
-          <Card
-            width={"full"}
-            direction={{ base: "column", sm: "row" }}
-            overflow="hidden"
-            bgGradient="linear(to-br, black, aclean.500)"
-            textColor={"white"}
-            variant="outline"
-          >
-            <Image
-              objectFit="cover"
-              maxW="150px"
-              src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
-              alt="Service"
-            />
+        {loading ? (
+          <Heading as={"h2"}>Loading...</Heading>
+        ) : (
+          <Stack spacing={3}>
+            <Card
+              width={"full"}
+              direction={{ base: "column", sm: "row" }}
+              overflow="hidden"
+              bgGradient="linear(to-br, black, aclean.500)"
+              textColor={"white"}
+              variant="outline"
+            >
+              <Image
+                objectFit="cover"
+                maxW="150px"
+                src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
+                alt="Service"
+              />
 
-            <Stack>
-              <CardBody>
-                <Flex flexWrap={"wrap"} gap={1} mb={2}>
-                  <Tag
-                    variant={"subtle"}
-                    colorScheme="aclean"
-                    size={"sm"}
-                    rounded={"full"}
-                  >
-                    {service?.category}
-                  </Tag>
-                </Flex>
-                <Heading size="xl" fontStyle={"italic"}>
-                  {service?.name}
-                </Heading>
-                <Text fontFamily={"heading"}>{service?.owner}</Text>
+              <Stack>
+                <CardBody>
+                  <Flex flexWrap={"wrap"} gap={1} mb={2}>
+                    <Tag
+                      variant={"subtle"}
+                      colorScheme="aclean"
+                      size={"sm"}
+                      rounded={"full"}
+                    >
+                      {service.category}
+                    </Tag>
+                  </Flex>
+                  <Heading size="xl" fontStyle={"italic"}>
+                    {service.name}
+                  </Heading>
+                  <Text fontFamily={"heading"}>{service.owner}</Text>
 
-                <Text fontSize={"xl"} fontStyle={"italic"}>
-                  {service?.cost} {service?.currency}
-                </Text>
-              </CardBody>
-            </Stack>
-          </Card>
-
-          <Card
-            width="full"
-            bgGradient="linear(to-br, black, aclean.500)"
-            variant="outline"
-            textColor={"white"}
-          >
-            <CardBody>
-              <Stack spacing="3">
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Full Name
+                  <Text fontSize={"xl"} fontStyle={"italic"}>
+                    {service.cost} {service.currency}
                   </Text>
-                  <Input
-                    type={"text"}
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </Stack>
-
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Address
-                  </Text>
-                  <Textarea
-                    placeholder="Sesame Street Number 05, Los Angeles, USA"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                  />
-                </Stack>
-
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Phone Number
-                  </Text>
-                  <Input
-                    type={"tel"}
-                    placeholder="+62 123-4678-9000"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                </Stack>
-
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Email Address
-                  </Text>
-                  <Input
-                    type={"email"}
-                    placeholder="john.doe@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </Stack>
+                </CardBody>
               </Stack>
-            </CardBody>
-          </Card>
-        </Stack>
+            </Card>
+
+            <Card
+              width="full"
+              bgGradient="linear(to-br, black, aclean.500)"
+              variant="outline"
+              textColor={"white"}
+            >
+              <CardBody>
+                <Stack spacing="3">
+                  <Stack spacing={"-3"}>
+                    <Text
+                      fontSize={"xl"}
+                      fontFamily={"heading"}
+                      fontWeight={700}
+                      fontStyle={"italic"}
+                    >
+                      Full Name
+                    </Text>
+                    <Input
+                      type={"text"}
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </Stack>
+
+                  <Stack spacing={"-3"}>
+                    <Text
+                      fontSize={"xl"}
+                      fontFamily={"heading"}
+                      fontWeight={700}
+                      fontStyle={"italic"}
+                    >
+                      Address
+                    </Text>
+                    <Textarea
+                      placeholder="Sesame Street Number 05, Los Angeles, USA"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </Stack>
+
+                  <Stack spacing={"-3"}>
+                    <Text
+                      fontSize={"xl"}
+                      fontFamily={"heading"}
+                      fontWeight={700}
+                      fontStyle={"italic"}
+                    >
+                      Phone Number
+                    </Text>
+                    <Input
+                      type={"tel"}
+                      placeholder="+62 123-4678-9000"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                  </Stack>
+
+                  <Stack spacing={"-3"}>
+                    <Text
+                      fontSize={"xl"}
+                      fontFamily={"heading"}
+                      fontWeight={700}
+                      fontStyle={"italic"}
+                    >
+                      Email Address
+                    </Text>
+                    <Input
+                      type={"email"}
+                      placeholder="john.doe@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </Stack>
+                </Stack>
+              </CardBody>
+            </Card>
+          </Stack>
+        )}
 
         <Flex paddingTop={4} gap={2} justifyContent={"center"}>
           <ButtonGroup>
-            <ChakraLink onClick={() => history(-1)}>
+            <ChakraLink onClick={() => navigate(-1)}>
               <Button
                 leftIcon={
                   <Icon viewBox="0 0 384 512" color={"red.600"}>

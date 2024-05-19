@@ -125,7 +125,7 @@ export const Home = () => {
               <Image
                 objectFit="cover"
                 maxW={{ base: "100%", sm: "150px" }}
-                src={service.logo}
+                src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
                 alt={service.name}
               />
               <Stack>
@@ -150,9 +150,9 @@ export const Home = () => {
                         {service.cost} {service.currency}
                       </Text>
                     </Center>
-                    <Center>
+                    {/* <Center>
                       <Text fontSize={"xs"}>10 Finished Orders</Text>
-                    </Center>
+                    </Center> */}
                   </Flex>
                 </CardBody>
                 <CardFooter>

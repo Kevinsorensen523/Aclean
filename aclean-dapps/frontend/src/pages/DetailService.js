@@ -6,10 +6,8 @@ import {
   Card,
   CardBody,
   CardFooter,
-  CardHeader,
   Stack,
   Text,
-  ButtonGroup,
   Button,
   Image,
   Flex,
@@ -17,12 +15,11 @@ import {
   Icon,
   Link as ChakraLink,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Web3 from "web3";
 import { useParams, Link as ReactRouterLink } from "react-router-dom";
 import { NavigationBar } from "../components/NavigationBar";
 import { FooterBar } from "../components/FooterBar";
-import { useEffect } from "react";
 import ServiceContract from "./../contracts/ServiceContract.json";
 
 export const DetailService = () => {
@@ -62,8 +59,14 @@ export const DetailService = () => {
       );
       setContract(contractInstance);
 
-      const services = await contractInstance.methods.getAllServices().call();
-      setService(services[id]);
+      try {
+        const serviceData = await contractInstance.methods
+          .getServiceById(id)
+          .call();
+        setService(serviceData);
+      } catch (error) {
+        console.error("Error fetching service data", error);
+      }
     } else {
       window.alert("Smart contract not deployed to detected network.");
     }
@@ -114,7 +117,7 @@ export const DetailService = () => {
               <Center>
                 <Image
                   objectFit="cover"
-                  src={service.logo}
+                  src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
                   alt={service.name}
                   borderRadius={"lg"}
                   boxSize={"sm"}
@@ -131,7 +134,7 @@ export const DetailService = () => {
                   >
                     Owner Service
                   </Text>
-                  <Text>{account}</Text>
+                  <Text>{service.owner}</Text>
                 </Stack>
 
                 <Stack spacing={"-3"}>
@@ -229,7 +232,7 @@ export const DetailService = () => {
         </Card>
 
         <Flex paddingTop={4} gap={2} justifyContent={"center"}>
-          <ChakraLink as={ReactRouterLink} to="/order-service">
+          <ChakraLink as={ReactRouterLink} to={`/order-service/${id}`}>
             <Button
               leftIcon={
                 <Icon viewBox="0 0 576 512" color={"white"}>

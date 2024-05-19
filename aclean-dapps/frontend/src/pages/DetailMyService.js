@@ -157,7 +157,7 @@ export const DetailMyService = () => {
                     <Center>
                       <Image
                         objectFit="cover"
-                        src={service.logo}
+                        src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
                         alt={service.name}
                         borderRadius={"lg"}
                         boxSize={"sm"}
@@ -263,9 +263,8 @@ export const DetailMyService = () => {
                     >
                       Price
                     </Text>
-                    <Text fontSize={"4xl"}>
-                      {service.cost} {service.currency}
-                    </Text>
+                    <Text fontSize={"4xl"}>{service.cost}</Text>
+                    <Text fontSize={"4xl"}>{service.currency}</Text>
                   </Stack>
                 </CardFooter>
               </Card>

@@ -24,7 +24,7 @@ const router = createBrowserRouter([
     element: <DetailService />,
   },
   {
-    path: "/order-service",
+    path: "/order-service/:id",
     element: <OrderService />,
   },
   {
