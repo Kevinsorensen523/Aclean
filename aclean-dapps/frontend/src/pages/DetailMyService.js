@@ -1,239 +1,263 @@
 import {
-  Box,
-  Container,
-  Heading,
-  Card,
-  Image,
-  Stack,
-  CardBody,
-  Flex,
-  Tag,
-  Center,
-  Text,
-  ButtonGroup,
-  Button,
-  Icon,
-  Divider,
-  CardFooter,
-  Link as ChakraLink,
-} from "@chakra-ui/react";
-import { FooterBar } from "../components/FooterBar";
-import { NavigationBar } from "../components/NavigationBar";
-import { useEffect, useState } from "react";
+	Box,
+	Container,
+	Heading,
+	Card,
+	Image,
+	Stack,
+	CardBody,
+	Flex,
+	Tag,
+	Center,
+	Text,
+	ButtonGroup,
+	Button,
+	Icon,
+	Divider,
+	CardFooter,
+	Link as ChakraLink,
+	useToast,
+} from '@chakra-ui/react';
+import { FooterBar } from '../components/FooterBar';
+import { NavigationBar } from '../components/NavigationBar';
+import { useEffect, useState } from 'react';
 import {
-  useParams,
-  Link as ReactRouterLink,
-  useNavigate,
-} from "react-router-dom";
-import Web3 from "web3";
-import ServiceContract from "./../contracts/ServiceContract.json";
+	useParams,
+	Link as ReactRouterLink,
+	useNavigate,
+} from 'react-router-dom';
+import Web3 from 'web3';
+import ServiceContract from './../contracts/ServiceContract.json';
 
 export const DetailMyService = () => {
-  const { id } = useParams();
-  const [account, setAccount] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [service, setService] = useState(null);
-  const navigate = useNavigate();
+	const { id } = useParams();
+	const [account, setAccount] = useState(null);
+	const [contract, setContract] = useState(null);
+	const [service, setService] = useState(null);
+	const navigate = useNavigate();
+	const toast = useToast();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    loadWeb3();
-    loadBlockchainData();
-  }, []);
+	useEffect(() => {
+		window.scrollTo(0, 0);
+		loadWeb3();
+		loadBlockchainData();
+	}, []);
 
-  const loadWeb3 = async () => {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
-    } else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider);
-    } else {
-      window.alert("Non-Ethereum browser detected. Consider trying MetaMask!");
-    }
-  };
+	const loadWeb3 = async () => {
+		if (window.ethereum) {
+			window.web3 = new Web3(window.ethereum);
+			await window.ethereum.enable();
+		} else if (window.web3) {
+			window.web3 = new Web3(window.web3.currentProvider);
+		} else {
+			// window.alert("Non-Ethereum browser detected. Consider trying MetaMask!");
+			toast({
+				title: 'Error!',
+				description: `Non-Ethereum browser detected. Consider trying MetaMask!`,
+				status: 'error',
+				duration: 5000,
+				isClosable: true,
+			});
+		}
+	};
 
-  const loadBlockchainData = async () => {
-    const web3 = window.web3;
-    const accounts = await web3.eth.getAccounts();
-    setAccount(accounts[0]);
-    const networkId = await web3.eth.net.getId();
-    const deployedNetwork = ServiceContract.networks[networkId];
-    if (deployedNetwork) {
-      const contractInstance = new web3.eth.Contract(
-        ServiceContract.abi,
-        deployedNetwork.address
-      );
-      setContract(contractInstance);
+	const loadBlockchainData = async () => {
+		const web3 = window.web3;
+		const accounts = await web3.eth.getAccounts();
+		setAccount(accounts[0]);
+		const networkId = await web3.eth.net.getId();
+		const deployedNetwork = ServiceContract.networks[networkId];
+		if (deployedNetwork) {
+			const contractInstance = new web3.eth.Contract(
+				ServiceContract.abi,
+				deployedNetwork.address
+			);
+			setContract(contractInstance);
 
-      const services = await contractInstance.methods.getAllServices().call();
-      setService(services[id]);
-    } else {
-      window.alert("Smart contract not deployed to detected network.");
-    }
-  };
+			const services = await contractInstance.methods.getAllServices().call();
+			setService(services[id]);
+		} else {
+			// window.alert("Smart contract not deployed to detected network.");
+			toast({
+				title: 'Error!',
+				description: `Smart contract not deployed to detected network.`,
+				status: 'error',
+				duration: 5000,
+				isClosable: true,
+			});
+		}
+	};
 
-  if (!service) {
-    return (
-      <Box
-        maxWidth={"full"}
-        bgColor={"black"}
-        textColor={"white"}
-        minHeight={"100dvh"}
-      >
-        <NavigationBar />
-        <Container maxWidth={"container.xl"} paddingY={8}>
-          <Heading as={"h2"}>Loading...</Heading>
-        </Container>
-        <FooterBar />
-      </Box>
-    );
-  }
+	if (!service) {
+		return (
+			<Box
+				maxWidth={'full'}
+				bgColor={'black'}
+				textColor={'white'}
+				minHeight={'100dvh'}>
+				<NavigationBar />
+				<Container
+					maxWidth={'container.xl'}
+					paddingY={8}>
+					<Heading as={'h2'}>Loading...</Heading>
+				</Container>
+				<FooterBar />
+			</Box>
+		);
+	}
 
-  return (
-    <Box
-      maxWidth={"full"}
-      bgColor={"black"}
-      textColor={"white"}
-      minHeight={"100dvh"}
-    >
-      <NavigationBar />
+	return (
+		<Box
+			maxWidth={'full'}
+			bgColor={'black'}
+			textColor={'white'}
+			minHeight={'100dvh'}>
+			<NavigationBar />
 
-      <Container maxWidth={"container.xl"} paddingY={8}>
-        <Heading as={"h1"} marginBottom={4}>
-          Detail My Service {id}
-        </Heading>
+			<Container
+				maxWidth={'container.xl'}
+				paddingY={8}>
+				<Heading
+					as={'h1'}
+					marginBottom={4}>
+					Detail My Service {id}
+				</Heading>
 
-        <Card
-          bgGradient="linear(to-br, black, aclean.500)"
-          variant="outline"
-          textColor={"white"}
-        >
-          <CardBody>
-            <Stack spacing="3">
-              <Heading as={"h2"} textAlign={"center"} fontStyle={"italic"}>
-                {service.name}
-              </Heading>
+				<Card
+					bgGradient="linear(to-br, black, aclean.500)"
+					variant="outline"
+					textColor={'white'}>
+					<CardBody>
+						<Stack spacing="3">
+							<Heading
+								as={'h2'}
+								textAlign={'center'}
+								fontStyle={'italic'}>
+								{service.name}
+							</Heading>
 
-              <Center>
-                <Image
-                  objectFit="cover"
-                  src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
-                  alt="Service Image"
-                  borderRadius={"lg"}
-                  boxSize={"sm"}
-                />
-              </Center>
+							<Center>
+								<Image
+									objectFit="cover"
+									src="https://media.pricebook.co.id/article/5e5e294ab92c2e49128b456b/5e5e294ab92c2e49128b456b_1638247494.jpg"
+									alt="Service Image"
+									borderRadius={'lg'}
+									boxSize={'sm'}
+								/>
+							</Center>
 
-              <Stack direction={"column"} spacing={3}>
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Owner Service
-                  </Text>
-                  <Text>{service.owner}</Text>
-                </Stack>
+							<Stack
+								direction={'column'}
+								spacing={3}>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Owner Service
+									</Text>
+									<Text>{service.owner}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Category
-                  </Text>
-                  <Text>{service.category}</Text>
-                </Stack>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Category
+									</Text>
+									<Text>{service.category}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Description Service
-                  </Text>
-                  <Text>{service.description}</Text>
-                </Stack>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Description Service
+									</Text>
+									<Text>{service.description}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Address Owner
-                  </Text>
-                  <Text>{service.addressDetail}</Text>
-                </Stack>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Address Owner
+									</Text>
+									<Text>{service.addressDetail}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Phone Number
-                  </Text>
-                  <Text>{service.phoneNumber}</Text>
-                </Stack>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Phone Number
+									</Text>
+									<Text>{service.phoneNumber}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Email Address
-                  </Text>
-                  <Text>{service.email}</Text>
-                </Stack>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Email Address
+									</Text>
+									<Text>{service.email}</Text>
+								</Stack>
 
-                <Stack spacing={"-3"}>
-                  <Text
-                    fontSize={"xl"}
-                    fontFamily={"heading"}
-                    fontWeight={700}
-                    fontStyle={"italic"}
-                  >
-                    Finished Order
-                  </Text>
-                  <Text>10 Finished Orders</Text>
-                </Stack>
-              </Stack>
-            </Stack>
-          </CardBody>
+								<Stack spacing={'-3'}>
+									<Text
+										fontSize={'xl'}
+										fontFamily={'heading'}
+										fontWeight={700}
+										fontStyle={'italic'}>
+										Finished Order
+									</Text>
+									<Text>10 Finished Orders</Text>
+								</Stack>
+							</Stack>
+						</Stack>
+					</CardBody>
 
-          <Divider />
+					<Divider />
 
-          <CardFooter>
-            <Stack width={"full"} spacing={"-8"} textAlign={"center"}>
-              <Text
-                fontSize={"xl"}
-                fontFamily={"heading"}
-                fontWeight={700}
-                fontStyle={"italic"}
-              >
-                Price
-              </Text>
-              <Text fontSize={"4xl"}>
-                {service.cost} {service.currency}
-              </Text>
-            </Stack>
-          </CardFooter>
-        </Card>
+					<CardFooter>
+						<Stack
+							width={'full'}
+							spacing={'-8'}
+							textAlign={'center'}>
+							<Text
+								fontSize={'xl'}
+								fontFamily={'heading'}
+								fontWeight={700}
+								fontStyle={'italic'}>
+								Price
+							</Text>
+							<Text fontSize={'4xl'}>
+								{service.cost} {service.currency}
+							</Text>
+						</Stack>
+					</CardFooter>
+				</Card>
 
-        <Flex paddingTop={4} gap={2} justifyContent={"center"}>
-          <ChakraLink as={ReactRouterLink} to="/order-service">
-            {/* <Button
+				<Flex
+					paddingTop={4}
+					gap={2}
+					justifyContent={'center'}>
+					<ChakraLink
+						as={ReactRouterLink}
+						to="/order-service">
+						{/* <Button
               leftIcon={
                 <Icon viewBox="0 0 576 512" color={"white"}>
                   <path
@@ -249,10 +273,10 @@ export const DetailMyService = () => {
             >
               Order Service
             </Button> */}
-          </ChakraLink>
-        </Flex>
-      </Container>
-      <FooterBar />
-    </Box>
-  );
+					</ChakraLink>
+				</Flex>
+			</Container>
+			<FooterBar />
+		</Box>
+	);
 };

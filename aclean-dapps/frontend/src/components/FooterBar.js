@@ -7,7 +7,10 @@ import {
 	Link as ChakraLink,
 	Text,
 } from '@chakra-ui/react';
-import { Link as ReactRouterLink } from 'react-router-dom';
+import {
+	Link as ReactRouterLink,
+	NavLink as RouterLink,
+} from 'react-router-dom';
 
 export const FooterBar = () => {
 	return (
@@ -34,13 +37,19 @@ export const FooterBar = () => {
 							flexDirection={'column'}
 							gap={4}>
 							<Flex flexDirection={'row'}>
-								<Heading
-									as="h1"
-									size="3xl"
-									noOfLines={1}
-									fontStyle={'italic'}>
-									AClean
-								</Heading>
+								<ChakraLink
+									as={RouterLink}
+									to="/"
+									_activeLink={{ fontWeight: 900 }}
+									_hover={{ textDecoration: 'none' }}>
+									<Heading
+										as="h1"
+										size="3xl"
+										noOfLines={1}
+										fontStyle={'italic'}>
+										AClean
+									</Heading>
+								</ChakraLink>
 
 								<Spacer />
 
@@ -50,18 +59,24 @@ export const FooterBar = () => {
 									gap={1}
 									fontSize={'sm'}>
 									<ChakraLink
-										as={ReactRouterLink}
-										to="/detail-transaction">
+										as={RouterLink}
+										to={'/transaction-history'}
+										_activeLink={{ fontWeight: 900 }}
+										_hover={{ textDecoration: 'none' }}>
 										Transaction History
 									</ChakraLink>
 									<ChakraLink
-										as={ReactRouterLink}
-										href="#">
-										My Workspace
+										as={RouterLink}
+										to={'/my-service'}
+										_activeLink={{ fontWeight: 900 }}
+										_hover={{ textDecoration: 'none' }}>
+										My Service
 									</ChakraLink>
 									<ChakraLink
-										as={ReactRouterLink}
-										href="#">
+										as={RouterLink}
+										to={'/about-us'}
+										_activeLink={{ fontWeight: 900 }}
+										_hover={{ textDecoration: 'none' }}>
 										About Us
 									</ChakraLink>
 								</Flex>
