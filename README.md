@@ -118,3 +118,34 @@ The following steps may help you to host this project locally.
 ### Detail
 - `README.md` is important; primarily to tell how to use your project. Keep it simple and straightforward.
 - If an error occurs, it is the user's fault, not the developer's 😊
+
+## Making Changes
+### For a new feature:
+- On `main` branch
+- Create a branch `feature/your-new-feature-name`
+- Add your changes
+- Send a pull request to the `main` branch
+
+### For a Bugfix:
+- On `main` branch
+- Create a branch `hotfix/your-hotfix-name`
+- Add your changes
+- Send a pull request to the `main` branch
+
+## Releasing / Deployment
+1. Before merging development to production, append new CHANGELOG to explain what changes is being made
+   1. Commit the changes with message `Update CHANGELOG Aclean-dapps to x.x.x`
+2. After merged to master, change the commit message to
+   1. If releasing Aclean-dapps `Release Aclean-dapps x.x.x`
+3. Create Release note and tag in gitlab for every release to production
+   1. For Aclean-dapps name the release title and tag with `vx.x.x`
+
+## Changes Log 📜
+### Version 1.0.0
+🌟 Main Changes:
+- Initial Commit
+- Add Home Page
+- Add Transaction History
+- Add My Service
+- Add About Us
+- Add Order Service, Create New Service and Delete Service
