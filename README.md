@@ -1,5 +1,5 @@
-# Blockchain Lab Template
-GitHub repository template for Blockchain lab project submission. Follow the rules and the provided template in this repository to avoid penalty.
+# Aclean Decentralize Application Repository
+Aclean Dapps Github Repository along with Documentation for running the Application Locally.
 
 ## Team Member Group 02
 - Kevin Sorensen (00000062002) @flamengo5689
@@ -20,7 +20,9 @@ Additional notes to let everyone know regarding your team or the project.
 
 ### Work Organization
 - **Kevin Sorensen**
-  - Programmed the smart contract and oracle to handle data and flow control.
+  - Programmed the smart contract and flow control.
+  - Connect blockchain to front end.
+  - Testing with Ganache Testing Network.
 - **Adhitya Bagus Wicaksono**
   - Designed the webpage UIs.
   - Implemented and programmed webpage functionality.
